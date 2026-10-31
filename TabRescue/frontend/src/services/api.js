@@ -1,14 +1,22 @@
+
 /**
  * Centralized Fetch API Service for TabRescue
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+// Render Backend URL
+const API_BASE = (
+  import.meta.env.VITE_API_URL ||
+  'https://tabrescue-1.onrender.com'
+).replace(/\/+$/, '');
 
 /**
- * Universal request wrapper using the Fetch API
+ * Universal request wrapper using Fetch API
  */
 async function request(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  // Remove leading slash to avoid double slash
+  const cleanEndpoint = endpoint.replace(/^\/+/, '');
+
+  const url = `${API_BASE}/${cleanEndpoint}`;
 
   const headers = {
     'Content-Type': 'application/json',
@@ -17,6 +25,7 @@ async function request(endpoint, options = {}) {
 
   // Attach token if present
   const token = localStorage.getItem('tabrescue_token');
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -27,43 +36,66 @@ async function request(endpoint, options = {}) {
   };
 
   try {
+    console.log('[API Request]:', options.method || 'GET', url);
+
     const response = await fetch(url, config);
 
-    // If unauthorized, clean up and dispatch event
+    // Handle unauthorized requests
     if (response.status === 401) {
       localStorage.removeItem('tabrescue_token');
       localStorage.removeItem('tabrescue_user');
-      window.dispatchEvent(new Event('tabrescue:unauthorized'));
+
+      window.dispatchEvent(
+        new Event('tabrescue:unauthorized')
+      );
     }
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || `HTTP Error ${response.status}`);
+      throw new Error(
+        data.message || `HTTP Error ${response.status}`
+      );
     }
 
     return data;
+
   } catch (error) {
-    console.error(`[API Fetch Error] ${endpoint}:`, error.message);
+    console.error(
+      `[API Fetch Error] ${endpoint}:`,
+      error.message
+    );
+
     throw error;
   }
 }
 
-// Authentication Endpoints
+// ==========================================
+// AUTHENTICATION ENDPOINTS
+// ==========================================
+
 export const authApi = {
   register: (name, email, password) =>
     request('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+      }),
     }),
 
   login: (email, password) =>
     request('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     }),
 
-  getMe: () => request('/api/auth/me'),
+  getMe: () =>
+    request('/api/auth/me'),
 
   updateProfile: (profileData) =>
     request('/api/auth/profile', {
@@ -72,21 +104,40 @@ export const authApi = {
     }),
 };
 
-// Sessions Endpoints
+// ==========================================
+// SESSIONS ENDPOINTS
+// ==========================================
+
 export const sessionApi = {
   getSessions: (params = {}) => {
     const query = new URLSearchParams();
-    if (params.category && params.category !== 'All') query.append('category', params.category);
-    if (params.sort) query.append('sort', params.sort);
-    if (params.q) query.append('q', params.q);
+
+    if (params.category && params.category !== 'All') {
+      query.append('category', params.category);
+    }
+
+    if (params.sort) {
+      query.append('sort', params.sort);
+    }
+
+    if (params.q) {
+      query.append('q', params.q);
+    }
+
     const qs = query.toString();
-    return request(`/api/sessions${qs ? `?${qs}` : ''}`);
+
+    return request(
+      `/api/sessions${qs ? `?${qs}` : ''}`
+    );
   },
 
   searchSessions: (q) =>
-    request(`/api/sessions/search?q=${encodeURIComponent(q || '')}`),
+    request(
+      `/api/sessions/search?q=${encodeURIComponent(q || '')}`
+    ),
 
-  getSessionById: (id) => request(`/api/sessions/${id}`),
+  getSessionById: (id) =>
+    request(`/api/sessions/${id}`),
 
   createSession: (sessionData) =>
     request('/api/sessions', {
@@ -116,17 +167,25 @@ export const sessionApi = {
       method: 'POST',
     }),
 
-  getStats: () => request('/api/sessions/stats/summary'),
+  getStats: () =>
+    request('/api/sessions/stats/summary'),
 };
 
-// Browser Snapshot (Auto-save) Endpoints
+// ==========================================
+// BROWSER SNAPSHOT ENDPOINTS
+// ==========================================
+
 export const snapshotApi = {
-  getSnapshot: () => request('/api/snapshot'),
+  getSnapshot: () =>
+    request('/api/snapshot'),
 
   saveSnapshot: (tabs, windowCount = 1) =>
     request('/api/snapshot', {
       method: 'POST',
-      body: JSON.stringify({ tabs, windowCount }),
+      body: JSON.stringify({
+        tabs,
+        windowCount,
+      }),
     }),
 
   deleteSnapshot: () =>
@@ -134,6 +193,10 @@ export const snapshotApi = {
       method: 'DELETE',
     }),
 };
+
+// ==========================================
+// DEFAULT EXPORT
+// ==========================================
 
 export default {
   auth: authApi,

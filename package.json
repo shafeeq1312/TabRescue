@@ -1,0 +1,14 @@
+{
+  "name": "tabrescue-workspace-root",
+  "version": "1.0.0",
+  "description": "TabRescue Workspace Root",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix TabRescue/backend install && npm --prefix TabRescue/frontend install",
+    "dev:backend": "npm --prefix TabRescue/backend run dev",
+    "dev:frontend": "npm --prefix TabRescue/frontend run dev",
+    "start:backend": "npm --prefix TabRescue/backend start",
+    "build:frontend": "npm --prefix TabRescue/frontend run build",
+    "seed": "npm --prefix TabRescue/backend run seed"
+  }
+}

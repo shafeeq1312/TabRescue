@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabRescue</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <span class="brand-name">Tab<span class="accent-text">Rescue</span></span>
+      </div>
+      <div class="header-actions">
+        <span id="connectionBadge" class="badge badge-disconnected">Offline</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="popup-nav">
+      <button class="nav-btn active" data-tab="saveTab">Save Session</button>
+      <button class="nav-btn" data-tab="recentTab">Saved</button>
+      <button class="nav-btn" data-tab="settingsTab">Settings</button>
+    </nav>
+
+    <!-- Global Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- TAB 1: SAVE SESSION -->
+    <section id="saveTab" class="tab-pane active">
+      <!-- Unauthenticated Alert -->
+      <div id="authRequiredBanner" class="auth-banner hidden">
+        <p>Connect your TabRescue account in Settings to save and restore sessions.</p>
+        <button id="goToSettingsBtn" class="btn btn-secondary btn-sm">Go to Settings</button>
+      </div>
+
+      <!-- Tab Count Summary Card -->
+      <div class="tab-counter-card">
+        <div class="counter-header">
+          <span class="counter-label">Active Tabs</span>
+          <span id="tabCountBadge" class="counter-number">0</span>
+        </div>
+        <div id="duplicateAlert" class="duplicate-alert hidden">
+          <span class="alert-icon">ℹ️</span>
+          <span id="duplicateCountText">0 duplicate tabs will be merged</span>
+        </div>
+      </div>
+
+      <!-- Tabs Preview Accordion/List -->
+      <div class="tabs-preview-container">
+        <div class="preview-header">
+          <span class="preview-title">Tabs in this window:</span>
+          <button id="refreshTabsBtn" class="btn-icon" title="Refresh open tabs">🔄</button>
+        </div>
+        <div id="tabsList" class="tabs-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Session Form -->
+      <form id="saveSessionForm" class="session-form">
+        <div class="form-group">
+          <label for="sessionNameInput">Session Name</label>
+          <input
+            type="text"
+            id="sessionNameInput"
+            class="form-input"
+            placeholder="e.g. React Research & Docs"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="sessionCategorySelect">Category</label>
+            <select id="sessionCategorySelect" class="form-select">
+              <option value="Development">Development</option>
+              <option value="Learning">Learning</option>
+              <option value="Research">Research</option>
+              <option value="Work" selected>Work</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Personal">Personal</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sessionDescInput">Description (Optional)</label>
+          <input
+            type="text"
+            id="sessionDescInput"
+            class="form-input"
+            placeholder="Brief notes about these tabs..."
+          />
+        </div>
+
+        <button type="submit" id="saveSessionBtn" class="btn btn-primary btn-block">
+          <span class="btn-text">Save Current Session</span>
+          <span class="btn-loader hidden">Saving...</span>
+        </button>
+      </form>
+
+      <!-- Dashboard Quick Link -->
+      <div class="popup-footer-action">
+        <button id="openDashboardBtn" class="btn btn-ghost btn-sm btn-block">
+          Open Web Dashboard ↗
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 2: RECENT SESSIONS -->
+    <section id="recentTab" class="tab-pane">
+      <div class="recent-header">
+        <span class="section-title">Your Saved Sessions</span>
+        <button id="refreshRecentBtn" class="btn-icon" title="Refresh sessions">🔄</button>
+      </div>
+
+      <div id="recentSessionsLoader" class="loader-container hidden">
+        <div class="spinner"></div>
+        <p>Loading your sessions...</p>
+      </div>
+
+      <div id="recentSessionsList" class="recent-sessions-list">
+        <!-- Dynamically populated -->
+      </div>
+
+      <div id="recentEmptyState" class="empty-state hidden">
+        <p class="empty-title">No sessions saved yet</p>
+        <p class="empty-subtitle">Save your current window tabs to see them here.</p>
+      </div>
+    </section>
+
+    <!-- TAB 3: SETTINGS & ACCOUNT -->
+    <section id="settingsTab" class="tab-pane">
+      <div class="settings-group">
+        <h4 class="settings-title">Account Connection</h4>
+        <div id="accountStatusBox" class="account-card">
+          <div id="accountInfo" class="account-info hidden">
+            <span class="user-name" id="connectedUserName">User</span>
+            <span class="user-email" id="connectedUserEmail">email@example.com</span>
+            <button id="disconnectBtn" class="btn btn-danger btn-sm mt-2">Disconnect</button>
+          </div>
+          <div id="loginFormContainer" class="login-form-container">
+            <p class="login-prompt">Connect with your TabRescue account:</p>
+            <form id="extensionLoginForm" class="extension-login-form">
+              <input
+                type="email"
+                id="extEmailInput"
+                class="form-input mb-2"
+                placeholder="Email address"
+                required
+              />
+              <input
+                type="password"
+                id="extPasswordInput"
+                class="form-input mb-2"
+                placeholder="Password"
+                required
+              />
+              <button type="submit" id="extLoginBtn" class="btn btn-primary btn-block">
+                Connect Account
+              </button>
+            </form>
+            <div class="divider"><span>OR USE SYNC TOKEN</span></div>
+            <div class="token-input-group">
+              <input
+                type="password"
+                id="syncTokenInput"
+                class="form-input"
+                placeholder="Paste Extension Token from Dashboard"
+              />
+              <button id="saveTokenBtn" class="btn btn-secondary btn-sm mt-2 btn-block">
+                Connect via Token
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h4 class="settings-title">Auto-Save & Snapshot</h4>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <span class="toggle-label">Auto-Save Snapshots</span>
+            <span class="toggle-desc">Debounced auto-save of current tabs for instant crash recovery</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="autoSaveToggle" />
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div id="snapshotInfo" class="snapshot-status mt-2">
+          <span class="snapshot-text">Status: <span id="snapshotStatusText">Disabled</span></span>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h4 class="settings-title">API Configuration</h4>
+        <div class="form-group">
+          <label for="apiUrlInput">Backend API URL</label>
+          <input
+            type="url"
+            id="apiUrlInput"
+            class="form-input"
+            value="http://localhost:5000"
+            placeholder="http://localhost:5000"
+          />
+        </div>
+        <button id="saveApiUrlBtn" class="btn btn-secondary btn-sm mt-1">Save API URL</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
